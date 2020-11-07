@@ -1,0 +1,15 @@
+certifi==2020.6.20
+chardet==3.0.4
+idna==2.10
+imutils==0.5.3
+numpy==1.19.4
+opencv-python==4.4.0.46
+pandas==1.1.4
+Pillow==8.0.1
+pytesseract==0.3.6
+python-dateutil==2.8.1
+pytz==2020.4
+pyzbar==0.1.8
+requests==2.24.0
+six==1.15.0
+urllib3==1.25.11
