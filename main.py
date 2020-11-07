@@ -6,9 +6,12 @@ import cv2
 import pandas as pd
 import ES_UTILS
 
+from multiprocessing import Pool
+
 testDirectory = '/Users/EricSan/Custom_OCR_Lite/images/test'
 
 def process_single_file(path):
+    print(path)
     full_path = os.path.join(testDirectory, path)
 
     # segment patient sticker with custom object detection
@@ -16,6 +19,8 @@ def process_single_file(path):
         image_path = full_path, 
         padding_ratio = 0.015
     )
+
+    print(path, "#1")
 
     # get rotation_variance
     segment_variants_1xPad = ES_UTILS.rotate_image( # (cv2_image, angular_bound, angular_step)
@@ -46,6 +51,16 @@ def process_single_file(path):
 
     data['ECG_PATH'] = path
 
+    print(data)
+
+    return data
+
+def process_single_file_1(filepath):
+    data = {
+        'path': filepath,
+        'id': 'Y1745709',
+        'date': '07/11/2020',
+    }
     return data
 
 def main():
@@ -53,10 +68,17 @@ def main():
     output_df = pd.DataFrame()
     
     paths = os.listdir(testDirectory)
-    
+
+    # non multiprocessing    
     for path in paths[:10]: 
         data = process_single_file(path)
         output_df = output_df.append(data, ignore_index=True)
+
+    # # multiprocessing
+    # with Pool(2) as p:
+    #     output_data_list = p.map(process_single_file, paths[:10])
+    # for data in output_data_list:
+    #     output_df = output_df.append(data, ignore_index=True)
 
     output_df.to_csv('output_df.csv')
 
