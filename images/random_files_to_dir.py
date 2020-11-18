@@ -1,9 +1,9 @@
 
 
 import shutil, random, os
-dirpath = '/Volumes/QMEcgFtp/home/medicine/development/decg_v2_202005_c/media/ecg'
-valDirectory = '/Users/EricSan/Custom_OCR_Lite/images/validation'
-val_size = 100
+dirpath = '/home/medicine/development/decg_v2_202005_c/media/ecg'
+valDirectory = '/home/medicine/development/decg_custom_ocr_lite/images/test'
+val_size = 20
 
 filenames = random.sample(os.listdir(dirpath), val_size)
 

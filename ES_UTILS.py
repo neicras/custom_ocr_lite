@@ -16,7 +16,7 @@ def get_sticker_2(image_path, padding_ratio):
     height, width, channel = cv2_img.shape
     image_content = cv2_img.astype('uint8').tolist()
     
-    URL = 'http://localhost:8503/v1/models/sticker:predict'
+    URL = 'http://localhost:8502/v1/models/sticker:predict'
     headers = {"content-type": "application/json"}
     body = {"instances": [{"inputs": image_content}]}
     r = requests.post(URL, data=json.dumps(body), headers = headers) 

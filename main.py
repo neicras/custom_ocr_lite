@@ -5,22 +5,24 @@ import os
 import cv2
 import pandas as pd
 import ES_UTILS
+import sqlite3 as sql
 
 from multiprocessing import Pool
 
-testDirectory = '/Users/EricSan/Custom_OCR_Lite/images/test'
+testDirectory = '/home/medicine/development/decg_custom_ocr_lite/images/test'
+targetDirectory = '/home/medicine/development/decg_v2_202005_c/media/ecg'
 
 def process_single_file(path):
-    print(path)
-    full_path = os.path.join(testDirectory, path)
+
+    start_time = time.time()
+
+    full_path = os.path.join(targetDirectory, path)
 
     # segment patient sticker with custom object detection
     processing_segment_1xPad, processing_segment_3xPad = ES_UTILS.get_sticker_2(
         image_path = full_path, 
         padding_ratio = 0.015
     )
-
-    print(path, "#1")
 
     # get rotation_variance
     segment_variants_1xPad = ES_UTILS.rotate_image( # (cv2_image, angular_bound, angular_step)
@@ -36,8 +38,13 @@ def process_single_file(path):
     )
 
     fullecg_variants = ES_UTILS.rotate_image( # (cv2_image, angular_bound, angular_step)
-        cv2_image = cv2.imread(full_path), 
-        angular_bound = 2, 
+        cv2_image = cv2.resize(
+            cv2.imread(full_path), 
+            (0,0), 
+            fx=1.0, 
+            fy=1.0
+        ), 
+        angular_bound = 15, 
         angular_step = 3
     )
 
@@ -51,7 +58,7 @@ def process_single_file(path):
 
     data['ECG_PATH'] = path
 
-    print(data)
+    print(path, "completed at %s seconds ---" % (time.time() - start_time))
 
     return data
 
@@ -66,21 +73,46 @@ def process_single_file_1(filepath):
 def main():
     
     output_df = pd.DataFrame()
-    
-    paths = os.listdir(testDirectory)
+    paths = os.listdir(targetDirectory)
 
-    # non multiprocessing    
-    for path in paths[:10]: 
-        data = process_single_file(path)
-        output_df = output_df.append(data, ignore_index=True)
+    # # non multiprocessing    
+    # for path in paths[:10]: 
+    #     data = process_single_file(path)
+    #     output_df = output_df.append(data, ignore_index=True)
+    # output_df.to_csv('output_df.csv')
 
     # # multiprocessing
-    # with Pool(2) as p:
-    #     output_data_list = p.map(process_single_file, paths[:10])
+    # with Pool(4) as p:
+    #     output_data_list = p.map(process_single_file, paths[:20])
     # for data in output_data_list:
     #     output_df = output_df.append(data, ignore_index=True)
+    # output_df.to_csv('output_df.csv')
 
-    output_df.to_csv('output_df.csv')
+    # write to .db
+    done_filepaths = []
+    conn = sql.connect('output.db')
+    done_filepaths = []
+    def done_filepaths():
+        try:
+            df = pd.read_sql('SELECT * FROM output20201108', conn)
+            done_filepaths = df['ECG_PATH'].tolist()
+            return done_filepaths
+        except:
+            return done_filepaths
+
+    while set(paths) > set(done_filepaths()):
+        output_df = pd.DataFrame()
+        with Pool(4) as p:
+            output_data_list = p.map(process_single_file, list(set(paths)-set(done_filepaths()))[:100])
+        for data in output_data_list:
+            output_df = output_df.append(data, ignore_index=True)
+        output_df.to_sql('output20201108', conn, if_exists = 'append')
+
+        print("COMPLETED BATCH UPDATED TO OUTPUT.DB")
+        print("--- %s files completed ---" % len(set(done_filepaths())))
+        print("--- %s seconds ---" % (time.time() - start_time))
+
+
 
 import time
 start_time = time.time()
