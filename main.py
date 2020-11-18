@@ -18,11 +18,22 @@ def process_single_file(path):
 
     full_path = os.path.join(targetDirectory, path)
 
-    # segment patient sticker with custom object detection
-    processing_segment_1xPad, processing_segment_3xPad = ES_UTILS.get_sticker_2(
-        image_path = full_path, 
-        padding_ratio = 0.015
-    )
+    # initialize data
+    data = {}
+    data['ECG_PATH'] = path
+
+    # ad-hoc: wrap in a try, except for error
+    try:
+        # segment patient sticker with custom object detection
+        processing_segment_1xPad, processing_segment_3xPad = ES_UTILS.get_sticker_2(
+            image_path = full_path, 
+            padding_ratio = 0.015
+        )
+    except:
+        data['BarcodeID'] = 'error'
+        data['HKID_from_barcode'] = 'error'
+        data['HKID_from_text'] = 'error'
+        return data
 
     # get rotation_variance
     segment_variants_1xPad = ES_UTILS.rotate_image( # (cv2_image, angular_bound, angular_step)
@@ -48,15 +59,12 @@ def process_single_file(path):
         angular_step = 3
     )
 
-    data = {}
     for variant in segment_variants_1xPad:
         data = ES_UTILS.process_variant(variant, data)
     for variant in segment_variants_3xPad:
         data = ES_UTILS.process_variant(variant, data)
     for variant in fullecg_variants:
         data = ES_UTILS.process_variant(variant, data)
-
-    data['ECG_PATH'] = path
 
     print(path, "completed at %s seconds ---" % (time.time() - start_time))
 
@@ -75,20 +83,20 @@ def main():
     output_df = pd.DataFrame()
     paths = os.listdir(targetDirectory)
 
-    # # non multiprocessing    
+    # # non multiprocessing and write to csv
     # for path in paths[:10]: 
     #     data = process_single_file(path)
     #     output_df = output_df.append(data, ignore_index=True)
     # output_df.to_csv('output_df.csv')
 
-    # # multiprocessing
+    # # multiprocessing and write to csv
     # with Pool(4) as p:
     #     output_data_list = p.map(process_single_file, paths[:20])
     # for data in output_data_list:
     #     output_df = output_df.append(data, ignore_index=True)
     # output_df.to_csv('output_df.csv')
 
-    # write to .db
+    # # multiprocessing and write to .db
     done_filepaths = []
     conn = sql.connect('output.db')
     done_filepaths = []
