@@ -1,6 +1,7 @@
 inference_graph/
 test.jpg
 output_df.csv
+output_df1.csv
 images/temp
 images/test
 images/train
