@@ -18,10 +18,6 @@ def process_single_file(path):
 
     full_path = os.path.join(targetDirectory, path)
 
-    # initialize data
-    data = {}
-    data['ECG_PATH'] = path
-
     # ad-hoc: wrap in a try, except for error
     try:
         # segment patient sticker with custom object detection
@@ -30,10 +26,12 @@ def process_single_file(path):
             padding_ratio = 0.015
         )
     except:
-        data['BarcodeID'] = 'error'
-        data['HKID_from_barcode'] = 'error'
-        data['HKID_from_text'] = 'error'
-        return data
+        return {
+            'ECG_PATH': path,
+            'BarcodeID': 'error',
+            'HKID_from_barcode': 'error',
+            'HKID_from_text': 'error',
+        }
 
     # get rotation_variance
     segment_variants_1xPad = ES_UTILS.rotate_image( # (cv2_image, angular_bound, angular_step)
@@ -59,6 +57,7 @@ def process_single_file(path):
         angular_step = 3
     )
 
+    data = {}
     for variant in segment_variants_1xPad:
         data = ES_UTILS.process_variant(variant, data)
     for variant in segment_variants_3xPad:
@@ -68,6 +67,7 @@ def process_single_file(path):
 
     print(path, "completed at %s seconds ---" % (time.time() - start_time))
 
+    data['ECG_PATH'] = path
     return data
 
 def process_single_file_1(filepath):
